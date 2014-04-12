@@ -126,6 +126,12 @@ Moose is slow. *Really* slow for CLI. We can do better.
 
 =head3 find_or_create claify (RT)
 
+=head3 Rename relationship-creation methods
+
+People find C<belongs_to> and C<has_many> confusing.  RT#83712 has an initial
+attempt at renaming C<belongs_to> to C<refers_to>, which seems to be generally
+favoured; but it needs to be fleshed out for the other relationship types.
+
 =head1 HOW TO EDIT THIS DOCUMENT
 
 Anyone (developer or not) is welcome and encouraged to extend and/or change
