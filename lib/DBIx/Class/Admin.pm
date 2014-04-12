@@ -14,16 +14,8 @@ use Moo;
 use Try::Tiny;
 use Module::Runtime ();
 use Sub::Quote 'quote_sub';
+use DBIx::Class::_Types qw(Path Str Bool DBICConnectInfo DBICHashRef);
 use namespace::clean;
-
-use constant {
-  Str => quote_sub('1'),
-  File => quote_sub('1'),
-  DBICHashRef => quote_sub('1'),
-  Bool => quote_sub('1'),
-  Dir => quote_sub('1'),
-  DBICConnectInfo => quote_sub('1'),
-};
 
 =head1 NAME
 
@@ -124,8 +116,7 @@ a hash ref or json string to be used for identifying data to manipulate
 
 has 'where' => (
   is      => 'rw',
-  isa     => DBICHashRef,
-#  coerce  => 1,
+  isa     => DBICHashRef(coerce => 1),
 );
 
 
@@ -137,8 +128,7 @@ a hash ref or json string to be used for inserting or updating data
 
 has 'set' => (
   is      => 'rw',
-  isa     => DBICHashRef,
-#  coerce  => 1,
+  isa     => DBICHashRef(coerce => 1),
 );
 
 
@@ -150,8 +140,7 @@ a hash ref or json string to be used for passing additional info to the ->search
 
 has 'attrs' => (
   is      => 'rw',
-  isa     => DBICHashRef,
-#  coerce  => 1,
+  isa     => DBICHashRef(coerce => 1),
 );
 
 
@@ -163,9 +152,8 @@ connect_info the arguments to provide to the connect call of the schema_class
 
 has 'connect_info' => (
   is          => 'ro',
-  isa         => DBICConnectInfo,
+  isa         => DBICConnectInfo(coerce => 1),
   lazy_build  => 1,
-#  coerce      => 1,
 );
 
 sub _build_connect_info {
@@ -184,8 +172,7 @@ The config file should be in a format readable by Config::Any.
 
 has config_file => (
   is      => 'ro',
-  isa     => File,
-#  coerce  => 1,
+  isa     => Path(coerce => 1),
 );
 
 
@@ -211,7 +198,7 @@ config_stanza will still be required.
 
 has config => (
   is          => 'ro',
-  isa         => DBICHashRef,
+  isa         => DBICHashRef(coerce => 1),
   lazy_build  => 1,
 );
 
@@ -237,8 +224,7 @@ The location where sql ddl files should be created or found for an upgrade.
 
 has 'sql_dir' => (
   is      => 'ro',
-  isa     => Dir,
-#  coerce  => 1,
+  isa     => Path(coerce => 1),
 );
 
 
