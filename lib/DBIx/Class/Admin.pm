@@ -14,7 +14,7 @@ use Moo;
 use Try::Tiny;
 use Module::Runtime ();
 use Sub::Quote 'quote_sub';
-use DBIx::Class::_Types qw(Path Str Bool DBICConnectInfo DBICHashRef);
+use DBIx::Class::_Types qw(Path Str Bool DBICConnectInfo DBICHashRef DBICSchemaClass DBICSchema);
 use namespace::clean;
 
 =head1 NAME
@@ -69,10 +69,7 @@ the class of the schema to load
 
 has 'schema_class' => (
   is => 'ro',
-  isa => quote_sub(q{
-    $_[0] =~ qr/\A$Module::Runtime::module_name_rx\z/ or die "$_[0] is not a class name\n";
-    $_[0]->isa('DBIx::Class::Schema') or die "$_[0] is not a DBIC schema\n";
-  }),
+  isa => DBICSchemaClass,
 );
 
 =head2 schema
@@ -83,15 +80,12 @@ A pre-connected schema object can be provided for manipulation
 
 has 'schema' => (
   is => 'lazy',
-  isa => quote_sub(q{
-    $_[0]->isa('DBIx::Class::Schema') or die "$_[0] is not a DBIC schema\n";
-  })
+  isa => DBICSchema,
 );
 
 sub _build_schema {
   my ($self)  = @_;
 
-  Module::Runtime::require_module($self->schema_class);
   $self->connect_info->[3]{ignore_version} = 1;
   return $self->schema_class->connect(@{$self->connect_info});
 }
@@ -153,7 +147,8 @@ connect_info the arguments to provide to the connect call of the schema_class
 has 'connect_info' => (
   is          => 'ro',
   isa         => DBICConnectInfo(coerce => 1),
-  lazy_build  => 1,
+  lazy        => 1,
+  builder     => 1,
 );
 
 sub _build_connect_info {
@@ -199,7 +194,8 @@ config_stanza will still be required.
 has config => (
   is          => 'ro',
   isa         => DBICHashRef(coerce => 1),
-  lazy_build  => 1,
+  lazy        => 1,
+  builder     => 1,
 );
 
 sub _build_config {

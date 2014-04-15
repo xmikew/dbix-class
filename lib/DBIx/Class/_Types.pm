@@ -8,18 +8,18 @@ use Carp qw(confess);
 use Path::Tiny;
 use Sub::Name;
 use Scalar::Util qw(blessed looks_like_number reftype);
+use Class::Load qw(load_optional_class);
 
 sub import {
   my ($package, @methods) = @_;
   my $caller = caller;
   for my $method (@methods) {
-    $package->can($method) or confess "$package does not export $method";
+    my $check = $package->can($method) or confess "$package does not export $method";
     my $coerce = $package->can("coerce_$method");
     my $full_method = "${caller}::${method}";
     { no strict;
       *{$full_method} = subname $full_method => sub {
         my %args = @_;
-        my $check = sub { my $value = shift; &{$method}($value, %args) };
         ($coerce && $args{coerce} && wantarray)
           ? ( $check, coerce => $coerce )
           : $check;
@@ -50,12 +50,12 @@ sub Path {
 sub coerce_Path { path($_[0]) }
 
 sub Defined {
-  error("Value $_[0] must be Defined", @_)
+  error("Value must be Defined", @_)
     unless defined($_[0]);
 }
 
 sub UnDefined {
-  error("Value $_[0] must be UnDefined", @_)
+  error("Value must be UnDefined", @_)
     unless !defined($_[0]);
 }
 
@@ -79,6 +79,11 @@ sub HashRef {
     unless(Defined(@_) && (reftype($_[0]) eq 'HASH'));
 }
 
+sub ArrayRef {
+  error("$_[0] must be an ArrayRef", @_)
+    unless(Defined(@_) && (reftype($_[0]) eq 'ARRAY'));
+}
+
 sub _json_to_data {
   my ($json_str) = @_;
   require JSON::Any;
@@ -93,7 +98,10 @@ sub DBICHashRef {
 }
 
 sub coerce_DBICHashRef {
-  _json_to_data(@_);
+  !ref $_[0] ? _json_to_data(@_)
+    : reftype $_[0] eq 'HASH' ? $_[0]
+    : error("Cannot coerce @{[reftype $_[0]]}")
+  ;
 }
 
 sub DBICConnectInfo {
@@ -101,7 +109,11 @@ sub DBICConnectInfo {
 }
 
 sub coerce_DBICConnectInfo {
-  reftype $_[0] eq 'HashRef' ? [ $_[0] ] : _json_to_data(@_);
+  !ref $_[0] ? _json_to_data(@_)
+    : reftype $_[0] eq 'ARRAY' ? $_[0]
+    : reftype $_[0] eq 'HASH'  ? [ $_[0] ]
+    : error("Cannot coerce @{[reftype $_[0]]}")
+  ;
 }
 
 sub PositiveNumber {
@@ -114,9 +126,9 @@ sub PositiveInteger {
     unless(Integer(@_) && ($_[0] >= 0));
 }
 
-sub ClassName {
-  error("$_[0] is not a loaded Class", @_)
-    unless(Defined(@_) && ($_[0]->can('can')));
+sub LoadableClass {
+  error("$_[0] is not a loadable Class", @_)
+    unless(load_optional_class($_[0]));
 }
 
 sub Object {
@@ -137,6 +149,11 @@ sub DBICStorageDBIReplicatedPool {
 sub DBICSchema {
   error("Need an Object of type DBIx::Class::Schema, not ".ref($_[0]), @_)
     unless(Object(@_) && ($_[0]->isa('DBIx::Class::Schema')));
+}
+
+sub DBICSchemaClass {
+  error("Need an Object of type DBIx::Class::Schema, not ".ref($_[0]), @_)
+    unless(LoadableClass(@_) && ($_[0]->isa('DBIx::Class::Schema')));
 }
 
 sub DoesDBICStorageReplicatedBalancer {
