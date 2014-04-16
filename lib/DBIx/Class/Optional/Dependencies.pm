@@ -32,15 +32,10 @@ my $replicated = {
 };
 
 my $admin_basic = {
-  %$moose_basic,
   %$min_json_any,
-  'MooseX::Types::Path::Class'    => '0.05',
-  'MooseX::Types::JSON'           => '0.02',
-  'namespace::autoclean'          => '0.09',
 };
 
 my $admin_script = {
-  %$moose_basic,
   %$admin_basic,
   'Getopt::Long::Descriptive' => '0.081',
   'Text::CSV'                 => '1.16',
