@@ -12,6 +12,7 @@ use DBIx::Class::Storage::DBI::Replicated::Pool;
 use DBIx::Class::Storage::DBI::Replicated::Balancer;
 use DBIx::Class::_Types qw/BalancerClassNamePart LoadableClass HashRef Object DBICSchema DBICStorageDBI/;
 use Scalar::Util qw(reftype blessed);
+use Sub::Name qw(subname);
 use Hash::Merge;
 use List::Util qw/min max reduce/;
 use Context::Preserve 'preserve_context';
@@ -398,10 +399,11 @@ if (DBIx::Class::_ENV_::DBICTEST) {
 }
 
 for my $method (@{$method_dispatch->{unimplemented}}) {
-  Class::Method::Modifiers::fresh($method, sub {
+  no strict 'refs';
+  *{$method} = subname $method => sub {
     my $self = shift;
     $self->throw_exception("$method() must not be called on ".(blessed $self).' objects');
-  });
+  };
 }
 
 =head2 read_handler
