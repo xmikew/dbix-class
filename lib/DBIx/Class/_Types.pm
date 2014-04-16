@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp qw(confess);
 
-use Path::Tiny;
+use Path::Class;
 use Sub::Name;
 use Scalar::Util qw(blessed looks_like_number reftype);
 use Class::Load qw(load_optional_class);
@@ -42,12 +42,19 @@ sub Str {
     unless Defined(@_) && !ref $_[0];
 }
 
-sub Path {
-  error("Value $_[0] must be a Path::Tiny")
-    unless Object(@_) && $_[0]->isa("Path::Tiny");
+sub Dir {
+  error("Value $_[0] must be a Path::Class::Dir")
+    unless Object(@_) && $_[0]->isa("Path::Class::Dir");
 }
 
-sub coerce_Path { path($_[0]) }
+sub coerce_Dir{ dir($_[0]) }
+
+sub File {
+  error("Value $_[0] must be a Path::Class::File")
+    unless Object(@_) && $_[0]->isa("Path::Class::File");
+}
+
+sub coerce_File { file($_[0]) }
 
 sub Defined {
   error("Value must be Defined", @_)

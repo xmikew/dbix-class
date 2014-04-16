@@ -14,7 +14,7 @@ use Moo;
 use Try::Tiny;
 use Module::Runtime ();
 use Sub::Quote 'quote_sub';
-use DBIx::Class::_Types qw(Path Str Bool DBICConnectInfo DBICHashRef DBICSchemaClass DBICSchema);
+use DBIx::Class::_Types qw(File Dir Str Bool DBICConnectInfo DBICHashRef DBICSchemaClass DBICSchema);
 use namespace::clean;
 
 =head1 NAME
@@ -167,7 +167,7 @@ The config file should be in a format readable by Config::Any.
 
 has config_file => (
   is      => 'ro',
-  isa     => Path(coerce => 1),
+  isa     => File(coerce => 1),
 );
 
 
@@ -220,7 +220,7 @@ The location where sql ddl files should be created or found for an upgrade.
 
 has 'sql_dir' => (
   is      => 'ro',
-  isa     => Path(coerce => 1),
+  isa     => Dir(coerce => 1),
 );
 
 
