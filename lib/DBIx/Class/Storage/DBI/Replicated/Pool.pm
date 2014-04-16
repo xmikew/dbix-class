@@ -1,15 +1,15 @@
 package DBIx::Class::Storage::DBI::Replicated::Pool;
 
-use Moose;
+use Moo;
+use MooX::HandlesVia;
 use DBIx::Class::Storage::DBI::Replicated::Replicant;
 use List::Util 'sum';
 use Scalar::Util 'reftype';
 use DBI ();
-use MooseX::Types::Moose qw/Num Int ClassName HashRef/;
-use DBIx::Class::Storage::DBI::Replicated::Types 'DBICStorageDBI';
+use DBIx::Class::_Types qw(HashRef Number Integer LoadableClass DBICStorageDBI);
 use Try::Tiny;
 
-use namespace::clean -except => 'meta';
+use namespace::clean;
 
 =head1 NAME
 
@@ -43,10 +43,9 @@ return a number of seconds that the replicating database is lagging.
 
 has 'maximum_lag' => (
   is=>'rw',
-  isa=>Num,
-  required=>1,
+  isa=>Number,
   lazy=>1,
-  default=>0,
+  default=>sub { 0 },
 );
 
 =head2 last_validated
@@ -59,11 +58,11 @@ built-in.
 
 has 'last_validated' => (
   is=>'rw',
-  isa=>Int,
+  isa=>Integer,
   reader=>'last_validated',
   writer=>'_last_validated',
   lazy=>1,
-  default=>0,
+  default=>sub { 0 },
 );
 
 =head2 replicant_type ($classname)
@@ -76,7 +75,7 @@ just leave this alone.
 
 has 'replicant_type' => (
   is=>'ro',
-  isa=>ClassName,
+  isa=>LoadableClass,
   required=>1,
   default=>'DBIx::Class::Storage::DBI',
   handles=>{
@@ -125,8 +124,8 @@ Removes the replicant under $key from the pool
 
 has 'replicants' => (
   is=>'rw',
-  traits => ['Hash'],
-  isa=>HashRef['Object'],
+  handles_via => 'Hash',
+  isa=>HashRef,
   default=>sub {{}},
   handles  => {
     'set_replicant' => 'set',
@@ -145,13 +144,14 @@ around has_replicants => sub {
 
 has next_unknown_replicant_id => (
   is => 'rw',
-  traits => ['Counter'],
-  isa => Int,
+  isa => Integer,
   default => 1,
-  handles => {
-    'inc_unknown_replicant_id' => 'inc',
-  },
 );
+
+sub inc_unknown_replicant_id {
+  my ($self) = @_;
+  $self->next_unknown_replicant_id($self->next_unknown_replicant_id + 1);
+}
 
 =head2 master
 
@@ -252,9 +252,7 @@ sub connect_replicant {
     $replicant->_determine_driver
   });
 
-  Moose::Meta::Class->initialize(ref $replicant);
-
-  DBIx::Class::Storage::DBI::Replicated::Replicant->meta->apply($replicant);
+  Moo::Role->apply_roles_to_object($replicant, 'DBIx::Class::Storage::DBI::Replicated::Replicant');
 
   # link back to master
   $replicant->master($self->master);
@@ -419,7 +417,5 @@ John Napiorkowski <john.napiorkowski@takkle.com>
 You may distribute this code under the same terms as Perl itself.
 
 =cut
-
-__PACKAGE__->meta->make_immutable;
 
 1;

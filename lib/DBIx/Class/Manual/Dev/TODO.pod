@@ -114,7 +114,7 @@ hash keys being names in order to support L</Relationship arguments>.
 
 =head2 Warts / Cleanups / Deprecations
 
-=head3 Replicated cleanup and Moo migration
+=head3 Replicated cleanup
 
 =head3 select/group_by/order_by clarify semantics
 

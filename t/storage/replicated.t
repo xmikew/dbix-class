@@ -10,24 +10,14 @@ BEGIN {
     require DBIx::Class;
     plan skip_all => 'Test needs ' . DBIx::Class::Optional::Dependencies->req_missing_for ('test_replicated')
       unless DBIx::Class::Optional::Dependencies->req_ok_for ('test_replicated');
-
-    if (DBICTest::RunMode->is_smoker) {
-      my $mver = Moose->VERSION;
-      plan skip_all => "A trial version $mver of Moose detected known to break replication - skipping test known to fail"
-        if ($mver >= 1.99 and $mver <= 1.9902);
-    }
-
 }
 
-use Test::Moose;
 use Test::Exception;
 use List::Util 'first';
 use Scalar::Util 'reftype';
+use Class::Inspector;
 use File::Spec;
 use IO::Handle;
-use Moose();
-use MooseX::Types();
-note "Using Moose version $Moose::VERSION and MooseX::Types version $MooseX::Types::VERSION";
 
 my $var_dir = quotemeta ( File::Spec->catdir(qw/t var/) );
 
@@ -36,9 +26,7 @@ use DBIx::Class::Storage::DBI::Replicated;
 {
     package DBIx::Class::Storage::DBI::Replicated;
 
-    use Moose;
-
-    __PACKAGE__->meta->make_mutable;
+    use Moo;
 
     around connect_info => sub {
       my ($next, $self, $info) = @_;
@@ -46,9 +34,6 @@ use DBIx::Class::Storage::DBI::Replicated;
       $self->$next($info);
     };
 
-    __PACKAGE__->meta->make_immutable;
-
-    no Moose;
 }
 
 
@@ -274,11 +259,9 @@ for my $method (qw/by_connect_info by_storage_type/) {
 
 ### check that all Storage::DBI methods are handled by ::Replicated
 {
-  my @storage_dbi_methods = Class::MOP::Class
-    ->initialize('DBIx::Class::Storage::DBI')->get_all_method_names;
+  my @storage_dbi_methods = @{Class::Inspector->methods('DBIx::Class::Storage::DBI')};
 
-  my @replicated_methods  = DBIx::Class::Storage::DBI::Replicated->meta
-    ->get_all_method_names;
+  my @replicated_methods  = @{Class::Inspector->methods('DBIx::Class::Storage::DBI::Replicated')};
 
 # remove constants and OTHER_CRAP
   @storage_dbi_methods = grep !/^[A-Z_]+\z/, @storage_dbi_methods;
@@ -287,8 +270,7 @@ for my $method (qw/by_connect_info by_storage_type/) {
   @storage_dbi_methods = grep !/_accessor\z/, @storage_dbi_methods;
 
 # remove DBIx::Class (the root parent, with CAG and stuff) methods
-  my @root_methods = Class::MOP::Class->initialize('DBIx::Class')
-    ->get_all_method_names;
+  my @root_methods = @{Class::Inspector->methods('DBIx::Class')};
   my %count;
   $count{$_}++ for (@storage_dbi_methods, @root_methods);
 
@@ -322,16 +304,13 @@ for my $method (qw/by_connect_info by_storage_type/) {
   }
 }
 
-ok $replicated->schema->storage->meta
-    => 'has a meta object';
-
 isa_ok $replicated->schema->storage->master
     => 'DBIx::Class::Storage::DBI';
 
 isa_ok $replicated->schema->storage->pool
     => 'DBIx::Class::Storage::DBI::Replicated::Pool';
 
-does_ok $replicated->schema->storage->balancer
+ok Role::Tiny::does_role $replicated->schema->storage->balancer
     => 'DBIx::Class::Storage::DBI::Replicated::Balancer';
 
 ok my @replicant_connects = $replicated->generate_replicant_connect_info
@@ -392,16 +371,16 @@ ok $replicated->schema->storage->pool->has_replicants
 is $replicated->schema->storage->pool->num_replicants => 2
     => 'has two replicants';
 
-does_ok $replicated_storages[0]
+ok Role::Tiny::does_role $replicated_storages[0]
     => 'DBIx::Class::Storage::DBI::Replicated::Replicant';
 
-does_ok $replicated_storages[1]
+ok Role::Tiny::does_role $replicated_storages[1]
     => 'DBIx::Class::Storage::DBI::Replicated::Replicant';
 
-does_ok $replicated->schema->storage->replicants->{$replicant_names[0]}
+ok Role::Tiny::does_role $replicated->schema->storage->replicants->{$replicant_names[0]}
     => 'DBIx::Class::Storage::DBI::Replicated::Replicant';
 
-does_ok $replicated->schema->storage->replicants->{$replicant_names[1]}
+ok Role::Tiny::does_role $replicated->schema->storage->replicants->{$replicant_names[1]}
     => 'DBIx::Class::Storage::DBI::Replicated::Replicant';
 
 ## Add some info to the database

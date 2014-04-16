@@ -21,14 +21,8 @@ my $test_and_dist_json_any = {
   'JSON::Any'                     => '1.31',
 };
 
-my $moose_basic = {
-  'Moose'                         => '0.98',
-  'MooseX::Types'                 => '0.21',
-  'MooseX::Types::LoadableClass'  => '0.011',
-};
-
 my $replicated = {
-  %$moose_basic,
+  'MooX::HandlesVia'              => '0',
 };
 
 my $admin_basic = {
@@ -119,7 +113,6 @@ my $reqs = {
   test_replicated => {
     req => {
       %$replicated,
-      'Test::Moose'               => '0',
     },
   },
 
