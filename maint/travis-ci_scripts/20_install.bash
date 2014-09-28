@@ -1,6 +1,5 @@
 #!/bin/bash
 
-source maint/travis-ci_scripts/common.bash
 if [[ -n "$SHORT_CIRCUIT_SMOKE" ]] ; then return ; fi
 
 CPAN_MIRROR=$(echo "$PERL_CPANM_OPT" | grep -oP -- '--mirror\s+\S+' | head -n 1 | cut -d ' ' -f 2)
@@ -85,30 +84,3 @@ CPAN_CFG_SCRIPT="
   CPAN::Config->commit;
 "
 run_or_err "Configuring CPAN.pm" "perl -e '$CPAN_CFG_SCRIPT'"
-
-echo_err "
-===================== PERL CONFIGURATION COMPLETE =====================
-
-= CPUinfo
-$(perl -0777 -p -e 's/.+\n\n(?!\z)//s' < /proc/cpuinfo)
-
-= Meminfo
-$(free -m -t)
-
-= Diskinfo
-$(sudo df -h)
-
-$(mount | grep '^/')
-
-= Kernel info
-$(uname -a)
-
-= Network Configuration
-$(ip addr)
-
-= Network Sockets Status
-$(sudo netstat -an46p | grep -Pv '\s(CLOSING|(FIN|TIME|CLOSE)_WAIT.?|LAST_ACK)\s')
-
-= Processlist
-$(sudo ps fuxa)
-============================================================================="
